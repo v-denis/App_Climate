@@ -8,37 +8,64 @@
 
 import Foundation
 
+protocol WeatherManagerDelegate: class {
+	func didUpdateWeather(_ weatherManager: WeatherManager, with weather: WeatherModel)
+	func didFail(with error: Error)
+}
+
 struct WeatherManager {
 	
 	let weatherURL = "https://api.openweathermap.org/data/2.5/weather?appid=ca1e3566452b006fd066152d8fba22a6&units=metric"
+	weak var delegate: WeatherManagerDelegate?
 	
 	func fetchWeather(cityName: String) {
 		let urlString = "\(weatherURL)&q=\(cityName)"
-		makeRequest(urlString: urlString)
+		makeRequest(with: urlString)
 	}
 	
-	func makeRequest(urlString: String) {
+	func makeRequest(with urlString: String) {
 		
 		if let url = URL(string: urlString) {
 			let session = URLSession(configuration: .default)
-			let task = session.dataTask(with: url, completionHandler: handle(data:response:error:))
+			let task = session.dataTask(with: url) { (data, response, error) in
+				if error != nil {
+					self.delegate?.didFail(with: error!)
+					return
+				}
+				
+				if let safeData = data {
+					if let fetchedWeather = self.parseJSON(from: safeData) {
+						DispatchQueue.main.async {
+							self.delegate?.didUpdateWeather(self, with: fetchedWeather)
+						}
+					} else {
+						print("Can't parse the JSON")
+					}
+				}
+			}
 			task.resume()
 		}
 		
 	}
 	
-	func handle(data: Data?, response: URLResponse?, error: Error?) -> Void {
+	func parseJSON(from jsonData: Data) -> WeatherModel? {
 		
-		if error != nil {
-			print(error!.localizedDescription)
-			return
-		}
+		let decoder = JSONDecoder()
 		
-		if data != nil {
-			let stringData = String(data: data!, encoding: .utf8)
-			print(stringData!)
+		do {
+			let decodedData = try decoder.decode(WeatherData.self, from: jsonData)
+			let city = decodedData.name
+			let condition = decodedData.weather[0].id
+			let temp = decodedData.main.temp
+			
+			let weather = WeatherModel(cityName: city, conditionId: condition, temperature: temp)
+			return weather
+		} catch let error {
+			delegate?.didFail(with: error)
+			return nil
 		}
 		
 	}
+	
 	
 }
