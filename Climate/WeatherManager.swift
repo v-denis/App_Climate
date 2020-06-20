@@ -16,10 +16,10 @@ protocol WeatherManagerDelegate: class {
 
 struct WeatherManager {
 	
-	let weatherURL = "https://api.openweathermap.org/data/2.5/weather?appid=ca1e3566452b006fd066152d8fba22a6&units=metric"
-	let forCoordinatesURL = "https://api.openweathermap.org/data/2.5/weather?appid=ca1e3566452b006fd066152d8fba22a6"
-	let forecastWeatherURL = "https://api.openweathermap.org/data/2.5/onecall?exclude=hourly&appid=ca1e3566452b006fd066152d8fba22a6&units=metric"
-	//lat=55.75&lon=37.62&
+	static let apiKey = ""
+	let weatherURL = "https://api.openweathermap.org/data/2.5/weather?appid=\(apiKey)&units=metric"
+	let forCoordinatesURL = "https://api.openweathermap.org/data/2.5/weather?appid=\(apiKey)"
+	let forecastWeatherURL = "https://api.openweathermap.org/data/2.5/onecall?exclude=hourly&appid=\(apiKey)&units=metric"
 	
 	weak var delegate: WeatherManagerDelegate?
 	
@@ -32,12 +32,7 @@ struct WeatherManager {
 		let urlString = "\(weatherURL)&lon=\(longitude)&lat=\(latitude)"
 		makeRequest(with: urlString)
 	}
-	
-//	func getCoordinates(forCityName cityName: String) -> (lat: Double, lon: Double)? {
-//		let urlString = "\(forCoordinatesURL)&q=\(cityName)"
-//
-//	}
-	
+
 	
 	private func fetchForecastWeather(forCoordinates coord: Coordinates) {
 		let urlString = "\(forecastWeatherURL)&lon=\(coord.lon)&lat=\(coord.lat)"

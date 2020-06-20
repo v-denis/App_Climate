@@ -6,14 +6,6 @@
 //  Copyright © 2020 Denis Valshchikov. All rights reserved.
 //
 
-/*
-let x = Date(timeIntervalSince1970: 1592419794)
-let formatter = DateFormatter()
-//		let timeZone = TimeZone(secondsFromGMT: <#T##Int#>)
-print(formatter.timeZone.secondsFromGMT())
-formatter.dateFormat = "dd-MM-yyyy HH:mm"
-print(formatter.string(from: x))
-*/
 
 import Foundation
 
