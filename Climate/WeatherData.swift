@@ -14,6 +14,8 @@ struct WeatherData: Decodable {
 	let weather: [Weather]
 	let main: Main
 	let coord: Coordinates
+	let dt: Int
+	let timezone: Int
 }
 
 
@@ -35,3 +37,5 @@ struct Weather: Decodable {
 	let description: String
 	let icon: String
 }
+
+

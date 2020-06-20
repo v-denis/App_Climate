@@ -15,9 +15,17 @@ class WeatherViewController: UIViewController {
 	@IBOutlet weak var temeratureLabel: UILabel!
 	@IBOutlet weak var cityLabel: UILabel!
 	@IBOutlet weak var searchTextField: UITextField!
+	@IBOutlet weak var forecastTableView: UITableView!
+	@IBOutlet weak var todayLabel: UILabel!
 	
 	let activityIndicator = UIActivityIndicatorView(style: .medium)
 	var weatherManager = WeatherManager()
+	var forecastWeather = [ForecastWeatherModel]() {
+		didSet {
+			forecastWeather.removeFirst()
+			forecastTableView.reloadData()
+		}
+	}
 	let locationManager = CLLocationManager()
 	
 	override func viewDidLoad() {
@@ -26,29 +34,48 @@ class WeatherViewController: UIViewController {
 		locationManager.delegate = self
 		weatherManager.delegate = self
 		searchTextField.delegate = self
-		
+		configuratingTableView()
+		configureTapGesture()
+		configuratingActivityIndicator()
+		cityLabel.adjustsFontSizeToFitWidth = true
+	}
+	
+	override func viewWillAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		activityIndicator.startAnimating()
 		locationManager.requestWhenInUseAuthorization()
 		locationManager.requestLocation()
-		configureTapGesture()
-		activityIndicator.color = UIColor(named: "weatherColor")
-		activityIndicator.hidesWhenStopped = true
-		searchTextField.addSubview(activityIndicator)
-		activityIndicator.frame = CGRect(x: searchTextField.bounds.minX, y: searchTextField.bounds.minY, width: 35, height: searchTextField.frame.height)
-//		activityIndicator.frame = searchTextField.bounds
 	}
+	
 
 	@IBAction func searchPressed(_ sender: UIButton? = nil) {
 		searchTextField.endEditing(true)
 	}
 	
 	@IBAction func locationPressed(_ sender: UIButton) {
-		
+		activityIndicator.startAnimating()
 		locationManager.requestLocation()
+	}
+	
+	private func configuratingActivityIndicator() {
+		activityIndicator.color = UIColor(named: "weatherColor")
+		activityIndicator.hidesWhenStopped = true
+		searchTextField.addSubview(activityIndicator)
+		activityIndicator.frame = CGRect(x: searchTextField.bounds.minX, y: searchTextField.bounds.minY, width: 35, height: searchTextField.frame.height)
 	}
 	
 	private func configureTapGesture() {
 		let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture(_:)))
 		view.addGestureRecognizer(tapGesture)
+	}
+	
+	private func configuratingTableView() {
+		forecastTableView.dataSource = self
+		forecastTableView.delegate = self
+		forecastTableView.register(WeatherTableViewCell.nib, forCellReuseIdentifier: WeatherTableViewCell.reuseId)
+		forecastTableView.separatorStyle = .none
+		forecastTableView.allowsSelection = false
+		
 	}
 	
 	@objc func handleTapGesture(_ sender: UITapGestureRecognizer) {
@@ -95,16 +122,40 @@ extension WeatherViewController: UITextFieldDelegate {
 //MARK: - WeatherManagerDelegate
 extension WeatherViewController: WeatherManagerDelegate {
 	
+	func didUpdateForecastWeather(_ weatherManager: WeatherManager, forecast: [ForecastWeatherModel]) {
+		forecastWeather = forecast
+	}
+	
+	
 	func didUpdateWeather(_ weatherManager: WeatherManager, with weather: WeatherModel) {
-		activityIndicator.stopAnimating()
 		temeratureLabel.text = weather.temperatureString
 		cityLabel.text = weather.cityName
 		conditionImageView.image = UIImage(systemName: weather.conditionString)
+		todayLabel.text = weather.weekDay
 	}
 	
 	func didFail(with error: Error) {
-		print(error)
+		if error.localizedDescription == "The Internet connection appears to be offline." {
+			print("internet connection failed")
+			changePlaceholder(in: searchTextField, for: 4, placeholderText: "No internet connection", textAfter: "City name")
+			activityIndicator.stopAnimating()
+		} else if error.localizedDescription == "The data couldn’t be read because it is missing." {
+			print("missing data")
+			changePlaceholder(in: searchTextField, for: 4, placeholderText: "Incorrect city name", textAfter: "Enter city name")
+			activityIndicator.stopAnimating()
+		} else {
+			print(error.localizedDescription)
+		}
+		
 	}
+	
+	func changePlaceholder(in textField: UITextField, for seconds: Int, placeholderText tempText: String, textAfter consistentText: String) {
+		textField.placeholder = tempText
+		DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(seconds)) {
+			textField.placeholder = consistentText
+		}
+	}
+	
 }
 
 
@@ -116,7 +167,6 @@ extension WeatherViewController: CLLocationManagerDelegate {
 			locationManager.stopUpdatingLocation()
 			let lon = lastLocation.coordinate.longitude
 			let lat = lastLocation.coordinate.latitude
-			activityIndicator.startAnimating()
 			weatherManager.fetchWeather(withLongitude: lon, andLatitude: lat)
 		}
 		
@@ -125,4 +175,30 @@ extension WeatherViewController: CLLocationManagerDelegate {
 	func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
 		print(error)
 	}
+}
+
+
+//MARK: - UITableViewDelegate & UITableViewDataSource
+extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
+	
+	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+		return forecastWeather.count
+	}
+	
+	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+		let cell = tableView.dequeueReusableCell(withIdentifier: WeatherTableViewCell.reuseId, for: indexPath) as! WeatherTableViewCell
+		let currentDay = forecastWeather[indexPath.row]
+		cell.updateUI(withDayName: currentDay.weekDay, imageName: currentDay.conditionString, minTemp: currentDay.minTempString, maxTemp: currentDay.maxTempString)
+		if indexPath.row == forecastWeather.count - 1 {
+			activityIndicator.stopAnimating()
+		}
+		return cell
+	}
+	
+	func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+		return 45
+	}
+	
+	
+	
 }

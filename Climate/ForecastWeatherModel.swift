@@ -1,20 +1,37 @@
 //
-//  WeatherModel.swift
+//  ForecastWeatherModel.swift
 //  Climate
 //
-//  Created by MacBook Air on 16.06.2020.
+//  Created by MacBook Air on 18.06.2020.
 //  Copyright © 2020 Denis Valshchikov. All rights reserved.
 //
 
+/*
+let x = Date(timeIntervalSince1970: 1592419794)
+let formatter = DateFormatter()
+//		let timeZone = TimeZone(secondsFromGMT: <#T##Int#>)
+print(formatter.timeZone.secondsFromGMT())
+formatter.dateFormat = "dd-MM-yyyy HH:mm"
+print(formatter.string(from: x))
+*/
+
 import Foundation
 
-struct WeatherModel {
+struct ForecastWeatherModel {
 	
-	let cityName: String
-	let conditionId: Int
-	let temperature: Double
+	private let minTemp: Double
+	private let maxTemp: Double
+	private let conditionId: Int
 	private let timeIntervalSince1970: Int
 	private let secondsFromGMT: Int
+	
+	var minTempString: String {
+		return String(format: "\(minTemp.getSign)%.f", minTemp)
+	}
+	
+	var maxTempString: String {
+		return String(format: "\(maxTemp.getSign)%.f", maxTemp)
+	}
 	
 	var weekDay: String {
 		let timeFormatter = DateFormatter()
@@ -22,10 +39,6 @@ struct WeatherModel {
 		timeFormatter.timeZone = TimeZone(secondsFromGMT: secondsFromGMT)
 		let dateSince1970 = Date(timeIntervalSince1970: TimeInterval(timeIntervalSince1970))
 		return timeFormatter.string(from: dateSince1970)
-	}
-	
-	var temperatureString: String {
-		return String(format: "\(temperature.getSign)%.f", temperature)
 	}
 	
 	var conditionString: String {
@@ -49,25 +62,13 @@ struct WeatherModel {
 		}
 	}
 	
-	public init(cityName: String, conditionId: Int, temperature: Double, timeIntervalSince1970: Int, secondsFromGMT: Int) {
-		self.cityName = cityName
+	public init(minTemp: Double, maxTemp: Double, conditionId: Int, timeIntervalSince1970: Int, secondsFromGMT: Int) {
+		self.minTemp = minTemp
+		self.maxTemp = maxTemp
 		self.conditionId = conditionId
-		self.temperature = temperature
 		self.timeIntervalSince1970 = timeIntervalSince1970
 		self.secondsFromGMT = secondsFromGMT
 	}
 	
-}
-
-extension Double {
 	
-	var getSign: String {
-		if self == 0 {
-			return ""
-		} else if self > 0 {
-			return "+"
-		} else {
-			return "-"
-		}
-	}
 }
