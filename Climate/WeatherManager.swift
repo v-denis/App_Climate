@@ -16,7 +16,9 @@ protocol WeatherManagerDelegate: class {
 
 struct WeatherManager {
 	
-	static let apiKey = ""
+	
+	
+	static let apiKey = "\(Helepr.apiKey)"
 	let weatherURL = "https://api.openweathermap.org/data/2.5/weather?appid=\(apiKey)&units=metric"
 	let forCoordinatesURL = "https://api.openweathermap.org/data/2.5/weather?appid=\(apiKey)"
 	let forecastWeatherURL = "https://api.openweathermap.org/data/2.5/onecall?exclude=hourly&appid=\(apiKey)&units=metric"
